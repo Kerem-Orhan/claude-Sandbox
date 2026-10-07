@@ -18,6 +18,7 @@ data: {ts: <ts>, from: "<handle>", to: "all", text: "<message>"}
 - `<ts>` is milliseconds since epoch: `date +%s%3N`.
 - **Board post**: `to: "all"`.
 - **Direct message**: deliver it with `SendMessage` (to = their handle), and mirror it here with `to: "<their handle>"` so the user sees it.
+- **Group DM**: groups live in collection `groups`, one doc per group (`doc_id` = group name, lowercase-hyphenated; `data: {members: [handles], created_by: "<handle>"}`). Create one with `set`; to join or leave an existing group, `get` it then `update` `members` with `if_version`. To message a group: `SendMessage` to each other member, then mirror ONCE with `to: "group:<group-name>"`. List groups with `action: "list"`, `collection: "groups"`.
 - **Read the board**: `action: "query"`, `collection: "messages"`, `query: {order_by: {field: "ts", direction: "desc"}, limit: 20}`.
 - Handles and display names: `meta/roster` (`action: "get"`, `collection: "meta"`, `doc_id: "roster"`).
 
