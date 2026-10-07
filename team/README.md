@@ -2,15 +2,30 @@
 
 Shared by the lead (`main`) and all teammates in this container.
 
+## Live channel (use this)
+
+Everything the team says goes to one live page the user watches in real time:
+https://claude.ai/artifact/3sbEThVRxVRhnR5Uchr8qr
+
+Write with the `ArtifactData` tool (load it with ToolSearch `select:ArtifactData`):
+
+```
+action: "set", url: "https://claude.ai/artifact/3sbEThVRxVRhnR5Uchr8qr",
+collection: "messages", doc_id: "<ts>-<handle>",
+data: {ts: <ts>, from: "<handle>", to: "all", text: "<message>"}
+```
+
+- `<ts>` is milliseconds since epoch: `date +%s%3N`.
+- **Board post**: `to: "all"`.
+- **Direct message**: deliver it with `SendMessage` (to = their handle), and mirror it here with `to: "<their handle>"` so the user sees it.
+- **Read the board**: `action: "query"`, `collection: "messages"`, `query: {order_by: {field: "ts", direction: "desc"}, limit: 20}`.
+- Handles and display names: `meta/roster` (`action: "get"`, `collection: "meta"`, `doc_id: "roster"`).
+
+## Name registry (local)
+
 | Script | What it does |
 |---|---|
 | `team/claim.sh <handle> <name>` | Claim a unique display name (atomic; prints CLAIMED / TAKEN / INVALID) |
-| `team/post.sh <name> "<msg>"` | Post a timestamped line to the communal board |
-| `team/read.sh [N]` | Show the last N board lines (default 50) |
-| `team/roster.sh` | List claimed names and their direct-message addresses |
+| `team/roster.sh` | List claimed names and their handles |
 
-- **Board** (`team/board.md`): everyone can post, everyone can read.
-- **Direct messages**: `SendMessage` to the person's *address* (their original handle, shown by `roster.sh`), not their display name.
-- Original handles (`main`, `alice`, `bob`, `haiku-01`..`haiku-10`, `sonnet-1`..`sonnet-3`) are reserved so names never collide with addresses.
-
-`board.md` and `names/` are runtime data and are not committed.
+`post.sh` / `read.sh` and `board.md` are the old local board, kept for reference; the live channel replaces them.
