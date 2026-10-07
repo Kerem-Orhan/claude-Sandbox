@@ -20,7 +20,7 @@ header{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 16px;padding-blo
 h1{font-size:18px;margin:0;text-wrap:balance}
 .status{font:12px var(--mono);color:var(--muted)}
 .status b{color:var(--accent);font-weight:600}
-.filters{display:flex;gap:6px;margin-left:auto}
+.filters{display:flex;flex-wrap:wrap;gap:6px;margin-left:auto}
 .filters button{font:12px var(--mono);padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--muted);cursor:pointer}
 .filters button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--bg)}
 .filters button:focus-visible,.composer :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -32,6 +32,7 @@ h1{font-size:18px;margin:0;text-wrap:balance}
 .msg + .msg{margin-top:2px}
 .msg.dm{background:var(--dm-soft)}
 .msg.grp{background:var(--accent-soft)}
+.msg.me{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
 .who .to.g{color:var(--accent)}
 .chip.g{border-color:var(--accent);color:var(--accent)}
 .time{font:11px var(--mono);color:var(--muted);font-variant-numeric:tabular-nums;padding-top:3px}
@@ -55,6 +56,7 @@ h1{font-size:18px;margin:0;text-wrap:balance}
       <button id="f-all" aria-pressed="true">All</button>
       <button id="f-board" aria-pressed="false">Board</button>
       <button id="f-dm" aria-pressed="false">DMs &amp; groups</button>
+      <button id="f-me" aria-pressed="false">For you <span id="me-n"></span></button>
     </div>
   </header>
   <div class="roster" id="roster"><span class="chip"><small>Roster appears once the team registers.</small></span></div>
@@ -70,7 +72,7 @@ h1{font-size:18px;margin:0;text-wrap:balance}
 const $ = id => document.getElementById(id);
 let filter = "all", docs = [], roster = {}, groups = {};
 
-for (const [id, f] of [["f-all","all"],["f-board","board"],["f-dm","dm"]]) {
+for (const [id, f] of [["f-all","all"],["f-board","board"],["f-dm","dm"],["f-me","me"]]) {
   $(id).onclick = () => {
     filter = f;
     for (const b of document.querySelectorAll(".filters button")) b.setAttribute("aria-pressed", b.id === id);
@@ -84,7 +86,9 @@ const nameOf = h => roster[h] || h;
 function render() {
   const log = $("log");
   const atBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 60;
-  const shown = docs.filter(d => filter === "all" || (filter === "dm") === (d.to && d.to !== "all"));
+  const mine = docs.filter(d => d.to === "you");
+  $("me-n").textContent = mine.length ? "(" + mine.length + ")" : "";
+  const shown = filter === "me" ? mine : docs.filter(d => filter === "all" || (filter === "dm") === (d.to && d.to !== "all"));
   if (!shown.length) {
     log.innerHTML = '<div class="empty">' + (docs.length ? "Nothing in this view yet." :
       "No messages yet. Board posts and direct messages between teammates show up here the moment they're sent.") + "</div>";
@@ -94,14 +98,14 @@ function render() {
     const el = document.createElement("div");
     const dm = d.to && d.to !== "all";
     const grp = dm && d.to.startsWith("group:");
-    el.className = "msg" + (grp ? " grp" : dm ? " dm" : "");
+    el.className = "msg" + (d.to === "you" ? " me" : grp ? " grp" : dm ? " dm" : "");
     const t = document.createElement("div"); t.className = "time"; t.textContent = fmt(d.ts);
     const w = document.createElement("div"); w.className = "who";
     w.append(d.name || nameOf(d.from));
     if (d.from && d.from !== "you") { const h = document.createElement("span"); h.className = "h"; h.textContent = " @" + d.from; w.append(h); }
     if (dm) {
       const to = document.createElement("span"); to.className = "to" + (grp ? " g" : "");
-      to.textContent = grp ? "  → #" + d.to.slice(6) + " (group)" : "  → " + nameOf(d.to) + " (DM)";
+      to.textContent = grp ? "  → #" + d.to.slice(6) + " (group)" : "  → " + (d.to === "you" ? "You" : nameOf(d.to)) + " (DM)";
       w.append(to);
     }
     const x = document.createElement("div"); x.className = "text"; x.textContent = d.text || "";
